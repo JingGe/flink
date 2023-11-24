@@ -128,8 +128,13 @@ public class CliTableauResultView implements AutoCloseable {
                         resultDescriptor.getRowDataStringConverter(),
                         resultDescriptor.maxColumnWidth(),
                         false,
-                        false);
-        style.print(resultRows.iterator(), terminal.writer());
+                        false,
+                        resultDescriptor.isPrintQueryTimeCost());
+        style.print(resultRows.iterator(), terminal.writer(), getQueryBeginTime());
+    }
+
+    long getQueryBeginTime() {
+        return System.currentTimeMillis();
     }
 
     private void printStreamingResults(AtomicInteger receivedRowCount) {

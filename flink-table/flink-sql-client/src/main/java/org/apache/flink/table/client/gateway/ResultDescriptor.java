@@ -29,6 +29,7 @@ import org.apache.flink.table.client.gateway.result.MaterializedCollectStreamRes
 import org.apache.flink.table.utils.print.RowDataToStringConverter;
 
 import static org.apache.flink.configuration.ExecutionOptions.RUNTIME_MODE;
+import static org.apache.flink.table.api.config.TableConfigOptions.DISPLAY_QUERY_TIME_COST;
 import static org.apache.flink.table.client.config.ResultMode.CHANGELOG;
 import static org.apache.flink.table.client.config.ResultMode.TABLE;
 import static org.apache.flink.table.client.config.SqlClientOptions.DISPLAY_MAX_COLUMN_WIDTH;
@@ -92,6 +93,10 @@ public class ResultDescriptor {
 
     public int maxColumnWidth() {
         return config.get(DISPLAY_MAX_COLUMN_WIDTH);
+    }
+
+    public boolean isPrintQueryTimeCost() {
+        return config.get(DISPLAY_QUERY_TIME_COST);
     }
 
     public RowDataToStringConverter getRowDataStringConverter() {
