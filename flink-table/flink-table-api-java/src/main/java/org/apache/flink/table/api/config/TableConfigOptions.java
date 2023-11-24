@@ -22,6 +22,7 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.annotation.docs.Documentation;
 import org.apache.flink.configuration.ConfigOption;
+import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.DescribedEnum;
 import org.apache.flink.configuration.description.Description;
 import org.apache.flink.configuration.description.InlineElement;
@@ -124,6 +125,14 @@ public class TableConfigOptions {
                             "When printing the query results to the client console, this parameter determines the number of characters shown on screen before truncating. "
                                     + "This only applies to columns with variable-length types (e.g. CHAR, VARCHAR, STRING) in the streaming mode. "
                                     + "Fixed-length types are printed in the batch mode using a deterministic column width.");
+
+    @Documentation.TableOption(execMode = Documentation.ExecMode.BATCH)
+    public static final ConfigOption<Boolean> DISPLAY_QUERY_TIME_COST =
+            ConfigOptions.key("table.display.query-time-cost")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription(
+                            "Determine whether to display the time consumption of the query. By default, no query time cost will be displayed.");
 
     @Documentation.TableOption(execMode = Documentation.ExecMode.BATCH_STREAMING)
     @Documentation.OverrideDefault("System.getProperty(\"java.io.tmpdir\")")
