@@ -59,7 +59,8 @@ public interface PrintStyle {
             RowDataToStringConverter converter,
             int maxColumnWidth,
             boolean printNullAsEmpty,
-            boolean printRowKind) {
+            boolean printRowKind,
+            boolean printQueryTimeCost) {
         Preconditions.checkArgument(maxColumnWidth > 0, "maxColumnWidth should be greater than 0");
         return new TableauStyle(
                 schema,
@@ -68,12 +69,27 @@ public interface PrintStyle {
                         schema.getColumns(), maxColumnWidth, printNullAsEmpty, printRowKind),
                 maxColumnWidth,
                 printNullAsEmpty,
-                printRowKind);
+                printRowKind,
+                printQueryTimeCost);
     }
 
     /**
      * Like {@link #tableauWithTypeInferredColumnWidths(ResolvedSchema, RowDataToStringConverter,
-     * int, boolean, boolean)}, but uses the data to infer the column size.
+     * int, boolean, boolean, boolean)}, but don't print the query time cost by default.
+     */
+    static TableauStyle tableauWithTypeInferredColumnWidths(
+            ResolvedSchema schema,
+            RowDataToStringConverter converter,
+            int maxColumnWidth,
+            boolean printNullAsEmpty,
+            boolean printRowKind) {
+        return tableauWithTypeInferredColumnWidths(
+                schema, converter, maxColumnWidth, printNullAsEmpty, printRowKind, false);
+    }
+
+    /**
+     * Like {@link #tableauWithTypeInferredColumnWidths(ResolvedSchema, RowDataToStringConverter,
+     * int, boolean, boolean, boolean)}, but uses the data to infer the column size.
      *
      * <p><b>NOTE:</b> please make sure the data to print is small enough to be stored in java heap
      * memory.
@@ -83,15 +99,36 @@ public interface PrintStyle {
             RowDataToStringConverter converter,
             int maxColumnWidth,
             boolean printNullAsEmpty,
-            boolean printRowKind) {
+            boolean printRowKind,
+            boolean printQueryTimeCost) {
         Preconditions.checkArgument(maxColumnWidth > 0, "maxColumnWidth should be greater than 0");
         return new TableauStyle(
-                schema, converter, null, maxColumnWidth, printNullAsEmpty, printRowKind);
+                schema,
+                converter,
+                null,
+                maxColumnWidth,
+                printNullAsEmpty,
+                printRowKind,
+                printQueryTimeCost);
     }
 
     /**
      * Like {@link #tableauWithDataInferredColumnWidths(ResolvedSchema, RowDataToStringConverter,
-     * int, boolean, boolean)}, but using default values.
+     * int, boolean, boolean, boolean)}, but using default values.
+     */
+    static TableauStyle tableauWithDataInferredColumnWidths(
+            ResolvedSchema schema,
+            RowDataToStringConverter converter,
+            int maxColumnWidth,
+            boolean printNullAsEmpty,
+            boolean printRowKind) {
+        return tableauWithDataInferredColumnWidths(
+                schema, converter, maxColumnWidth, printNullAsEmpty, printRowKind, false);
+    }
+
+    /**
+     * Like {@link #tableauWithDataInferredColumnWidths(ResolvedSchema, RowDataToStringConverter,
+     * int, boolean, boolean, boolean)}, but using default values.
      *
      * <p><b>NOTE:</b> please make sure the data to print is small enough to be stored in java heap
      * memory.
@@ -99,7 +136,20 @@ public interface PrintStyle {
     static TableauStyle tableauWithDataInferredColumnWidths(
             ResolvedSchema schema, RowDataToStringConverter converter) {
         return PrintStyle.tableauWithDataInferredColumnWidths(
-                schema, converter, DEFAULT_MAX_COLUMN_WIDTH, false, false);
+                schema, converter, DEFAULT_MAX_COLUMN_WIDTH, false, false, false);
+    }
+
+    /**
+     * Like {@link #tableauWithDataInferredColumnWidths(ResolvedSchema, RowDataToStringConverter,
+     * int, boolean, boolean, boolean)}, but using default values.
+     *
+     * <p><b>NOTE:</b> please make sure the data to print is small enough to be stored in java heap
+     * memory.
+     */
+    static TableauStyle tableauWithDataInferredColumnWidths(
+            ResolvedSchema schema, RowDataToStringConverter converter, boolean printQueryTimeCost) {
+        return PrintStyle.tableauWithDataInferredColumnWidths(
+                schema, converter, DEFAULT_MAX_COLUMN_WIDTH, false, false, printQueryTimeCost);
     }
 
     /**

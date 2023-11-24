@@ -82,6 +82,9 @@ public final class TableauStyle implements PrintStyle {
     /** A flag to indicate whether print row kind info. */
     private final boolean printRowKind;
 
+    /** A flag to indicate whether print query time cost. */
+    private final boolean printQueryTimeCost;
+
     private int[] columnWidths;
 
     private String[] columnNames;
@@ -92,12 +95,14 @@ public final class TableauStyle implements PrintStyle {
             int[] columnWidths,
             int maxColumnWidth,
             boolean printNullAsEmpty,
-            boolean printRowKind) {
+            boolean printRowKind,
+            boolean printQueryTimeCost) {
         this.converter = converter;
         this.columnWidths = columnWidths;
         this.maxColumnWidth = maxColumnWidth;
         this.printNullAsEmpty = printNullAsEmpty;
         this.printRowKind = printRowKind;
+        this.printQueryTimeCost = printQueryTimeCost;
 
         if (printRowKind) {
             this.columnNames =
@@ -117,6 +122,10 @@ public final class TableauStyle implements PrintStyle {
 
     @Override
     public void print(Iterator<RowData> it, PrintWriter printWriter) {
+        print(it, printWriter, -1);
+    }
+
+    public void print(Iterator<RowData> it, PrintWriter printWriter, long queryBeginTime) {
         if (!it.hasNext()) {
             printWriter.println("Empty set");
             printWriter.flush();
@@ -155,8 +164,20 @@ public final class TableauStyle implements PrintStyle {
         // print border line
         printBorderLine(printWriter);
         final String rowTerm = numRows > 1 ? "rows" : "row";
-        printWriter.println(numRows + " " + rowTerm + " in set");
+        if (!printQueryTimeCost || queryBeginTime < 0) {
+            printWriter.println(numRows + " " + rowTerm + " in set");
+        } else {
+            String timeCost =
+                    calculateTimeCostInPrintFormat(queryBeginTime, System.currentTimeMillis());
+            printWriter.println(numRows + " " + rowTerm + " in set" + timeCost);
+        }
         printWriter.flush();
+    }
+
+    static String calculateTimeCostInPrintFormat(long queryBeginTime, long stopCountingTime) {
+        String timeCost =
+                String.format("%.2f", Double.valueOf((stopCountingTime - queryBeginTime) / 1000d));
+        return " (" + timeCost + " seconds)";
     }
 
     public String[] rowFieldsToString(RowData row) {

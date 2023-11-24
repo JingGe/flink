@@ -75,6 +75,14 @@ class TableauStyleTest {
     }
 
     @Test
+    void testCalculateTimeCostInPrintFormat() {
+        long start = System.currentTimeMillis();
+
+        assertThat(TableauStyle.calculateTimeCostInPrintFormat(start, start + 5678))
+                .isEqualTo(" (5.68 seconds)");
+    }
+
+    @Test
     void testPrintWithEmptyResult() {
         PrintStyle.tableauWithDataInferredColumnWidths(getSchema(), getConverter())
                 .print(Collections.emptyIterator(), new PrintWriter(outContent));
@@ -149,6 +157,19 @@ class TableauStyleTest {
                                 + System.lineSeparator()
                                 + "8 rows in set"
                                 + System.lineSeparator());
+    }
+
+    @Test
+    void testPrintTimeCost() {
+        PrintStyle.tableauWithDataInferredColumnWidths(getSchema(), getConverter(), true)
+                .print(
+                        getData().iterator(),
+                        new PrintWriter(outContent),
+                        System.currentTimeMillis());
+
+        String[] outputLines = outContent.toString().split("\\r?\\n");
+        assertThat(outputLines[outputLines.length - 1])
+                .matches("8 rows in set \\(\\d+\\.\\d{2} seconds\\)");
     }
 
     @Test
