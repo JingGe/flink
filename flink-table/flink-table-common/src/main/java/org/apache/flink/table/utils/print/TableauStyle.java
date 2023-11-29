@@ -65,7 +65,7 @@ import java.util.stream.Stream;
 @Internal
 public final class TableauStyle implements PrintStyle {
 
-    public static final long DEFAULT_QUERY_BEGIN_TIME = -1;
+    public static final long DEFAULT_QUERY_BEGIN_TIME = -1L;
 
     // constants for printing
     private static final String ROW_KIND_COLUMN = "op";
@@ -128,12 +128,28 @@ public final class TableauStyle implements PrintStyle {
     }
 
     public void print(Iterator<RowData> it, PrintWriter printWriter, long queryBeginTime) {
-        if (!it.hasNext()) {
-            printWriter.println("Empty set");
-            printWriter.flush();
-            return;
-        }
+        if (printEmptySet(it, printWriter, queryBeginTime)) return;
+        long numRows = printTable(it, printWriter);
+        printFooter(printWriter, queryBeginTime, numRows);
+    }
 
+    public void printFooter(PrintWriter printWriter, long queryBeginTime, long numRows) {
+        final String rowTerm = numRows > 1 ? "rows" : "row";
+        if (!printQueryTimeCost || DEFAULT_QUERY_BEGIN_TIME == queryBeginTime) {
+            printWriter.println(numRows + " " + rowTerm + " in set");
+        } else {
+            String timeCost =
+                    calculateTimeCostInPrintFormat(queryBeginTime, System.currentTimeMillis());
+            printWriter.println(numRows + " " + rowTerm + " in set" + timeCost);
+        }
+        printWriter.flush();
+    }
+
+    /**
+     * Print table with column names and borders
+     * @return the row number printed in the table
+     */
+    public long printTable(Iterator<RowData> it, PrintWriter printWriter) {
         if (columnWidths == null) {
             final List<RowData> rows = new ArrayList<>();
             final List<String[]> content = new ArrayList<>();
@@ -165,15 +181,27 @@ public final class TableauStyle implements PrintStyle {
 
         // print border line
         printBorderLine(printWriter);
-        final String rowTerm = numRows > 1 ? "rows" : "row";
+        return numRows;
+    }
+
+    public boolean printEmptySet(
+            Iterator<RowData> it,
+            PrintWriter printWriter,
+            long queryBeginTime) {
+
+        if (it.hasNext()) {
+            return false;
+        }
+
         if (!printQueryTimeCost || DEFAULT_QUERY_BEGIN_TIME == queryBeginTime) {
-            printWriter.println(numRows + " " + rowTerm + " in set");
+            printWriter.println("Empty set");
         } else {
             String timeCost =
                     calculateTimeCostInPrintFormat(queryBeginTime, System.currentTimeMillis());
-            printWriter.println(numRows + " " + rowTerm + " in set" + timeCost);
+            printWriter.println("Empty set" + timeCost);
         }
         printWriter.flush();
+        return true;
     }
 
     static String calculateTimeCostInPrintFormat(long queryBeginTime, long stopCountingTime) {
