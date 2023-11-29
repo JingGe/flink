@@ -124,7 +124,7 @@ public final class TableauStyle implements PrintStyle {
 
     @Override
     public void print(Iterator<RowData> it, PrintWriter printWriter) {
-        print(it, printWriter, -1);
+        print(it, printWriter, DEFAULT_QUERY_BEGIN_TIME);
     }
 
     public void print(Iterator<RowData> it, PrintWriter printWriter, long queryBeginTime) {
