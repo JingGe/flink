@@ -65,6 +65,8 @@ import java.util.stream.Stream;
 @Internal
 public final class TableauStyle implements PrintStyle {
 
+    public static final long DEFAULT_QUERY_BEGIN_TIME = -1;
+
     // constants for printing
     private static final String ROW_KIND_COLUMN = "op";
     private static final String COLUMN_TRUNCATED_FLAG = "...";
@@ -164,7 +166,7 @@ public final class TableauStyle implements PrintStyle {
         // print border line
         printBorderLine(printWriter);
         final String rowTerm = numRows > 1 ? "rows" : "row";
-        if (!printQueryTimeCost || queryBeginTime < 0) {
+        if (!printQueryTimeCost || DEFAULT_QUERY_BEGIN_TIME == queryBeginTime) {
             printWriter.println(numRows + " " + rowTerm + " in set");
         } else {
             String timeCost =
