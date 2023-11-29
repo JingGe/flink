@@ -226,15 +226,34 @@ class CliTableauResultViewTest {
 
         view.close();
 
-        // test displaying query time cost
-        terminalOutput = new ByteArrayOutputStream();
-        terminal = TerminalUtils.createDumbTerminal(terminalOutput);
+        // adjust the max column width for printing
+        testConfig.set(DISPLAY_MAX_COLUMN_WIDTH, 80);
+
+        TestChangelogResult collectResult = createNewTestChangelogResult();
+        view = new CliTableauResultView(terminal, resultDescriptor, collectResult);
+        view.displayResults();
+        assertThat(terminalOutput.toString()).contains("abcdefghijklmnopqrstuvwxyz12345");
+
+        view.close();
+        // Job is finished. Don't need to close the job manually.
+        assertThat(collectResult.closed).isFalse();
+    }
+
+    @Test
+    void testBatchResultWithDisabledDisplayTimeCost() {
+        final Configuration testConfig = new Configuration();
+        testConfig.set(EXECUTION_RESULT_MODE, ResultMode.TABLEAU);
+        testConfig.set(RUNTIME_MODE, RuntimeExecutionMode.BATCH);
         testConfig.set(DISPLAY_QUERY_TIME_COST, false);
-        view =
+
+        ResultDescriptor resultDescriptor =
+                new ResultDescriptor(CliClientTestUtils.createTestClient(schema), testConfig);
+        TestChangelogResult collectResult = createNewTestChangelogResult();
+        CliTableauResultView view =
                 new CliTableauResultView(
                         terminal,
                         resultDescriptor,
-                        createNewTestChangelogResult(),
+                        collectResult,
                         System.currentTimeMillis());
         view.displayResults();
         assertThat(terminalOutput)
@@ -267,15 +286,26 @@ class CliTableauResultViewTest {
                                 + System.lineSeparator());
 
         view.close();
-
-        terminalOutput = new ByteArrayOutputStream();
-        terminal = TerminalUtils.createDumbTerminal(terminalOutput);
         testConfig.set(DISPLAY_QUERY_TIME_COST, true);
-        view =
+
+        // Job is finished. Don't need to close the job manually.
+        assertThat(collectResult.closed).isFalse();
+    }
+
+    @Test
+    void testBatchResultWithDisplayTimeCost() {
+        final Configuration testConfig = new Configuration();
+        testConfig.set(EXECUTION_RESULT_MODE, ResultMode.TABLEAU);
+        testConfig.set(RUNTIME_MODE, RuntimeExecutionMode.BATCH);
+
+        ResultDescriptor resultDescriptor =
+                new ResultDescriptor(CliClientTestUtils.createTestClient(schema), testConfig);
+        TestChangelogResult collectResult = createNewTestChangelogResult();
+        CliTableauResultView view =
                 new CliTableauResultView(
                         terminal,
                         resultDescriptor,
-                        createNewTestChangelogResult(),
+                        collectResult,
                         System.currentTimeMillis());
         view.displayResults();
         assertThat(terminalOutput.toString())
@@ -311,19 +341,10 @@ class CliTableauResultViewTest {
                 .matches("8 rows in set \\(\\d+\\.\\d{2} seconds\\)");
 
         view.close();
-
-        // adjust the max column width for printing
-        testConfig.set(DISPLAY_MAX_COLUMN_WIDTH, 80);
-
-        TestChangelogResult collectResult = createNewTestChangelogResult();
-        view = new CliTableauResultView(terminal, resultDescriptor, collectResult);
-        view.displayResults();
-        assertThat(terminalOutput.toString()).contains("abcdefghijklmnopqrstuvwxyz12345");
-
-        view.close();
         // Job is finished. Don't need to close the job manually.
         assertThat(collectResult.closed).isFalse();
     }
+
 
     @Test
     void testCancelBatchResult() throws Exception {
@@ -373,6 +394,52 @@ class CliTableauResultViewTest {
         view.close();
 
         assertThat(terminalOutput).hasToString("Empty set" + System.lineSeparator());
+
+        // Job is finished. Don't need to close the job manually.
+        assertThat(testChangelogResult.closed).isFalse();
+    }
+    @Test
+    void testEmptyBatchResultWithDisabledDisplayTimeCost() {
+        final Configuration testConfig = new Configuration();
+        testConfig.set(EXECUTION_RESULT_MODE, ResultMode.TABLEAU);
+        testConfig.set(RUNTIME_MODE, RuntimeExecutionMode.BATCH);
+        testConfig.set(DISPLAY_QUERY_TIME_COST, false);
+
+        ResultDescriptor resultDescriptor =
+                new ResultDescriptor(CliClientTestUtils.createTestClient(schema), testConfig);
+        TestChangelogResult testChangelogResult = new TestChangelogResult(TypedResult::endOfStream);
+        CliTableauResultView view =
+                new CliTableauResultView(terminal, resultDescriptor, testChangelogResult, System.currentTimeMillis());
+
+        view.displayResults();
+        view.close();
+
+        assertThat(terminalOutput).hasToString("Empty set" + System.lineSeparator());
+
+        testConfig.set(DISPLAY_QUERY_TIME_COST, true);
+        // Job is finished. Don't need to close the job manually.
+        assertThat(testChangelogResult.closed).isFalse();
+    }
+
+    @Test
+    void testEmptyBatchResultWithDisplayingTimeCost() {
+        final Configuration testConfig = new Configuration();
+        testConfig.set(EXECUTION_RESULT_MODE, ResultMode.TABLEAU);
+        testConfig.set(RUNTIME_MODE, RuntimeExecutionMode.BATCH);
+
+        ResultDescriptor resultDescriptor =
+                new ResultDescriptor(CliClientTestUtils.createTestClient(schema), testConfig);
+        TestChangelogResult testChangelogResult = new TestChangelogResult(TypedResult::endOfStream);
+        CliTableauResultView view =
+                new CliTableauResultView(terminal, resultDescriptor, testChangelogResult, System.currentTimeMillis());
+
+        view.displayResults();
+        view.close();
+
+        String[] outputLines = terminalOutput.toString().split("\\r?\\n");
+        assertThat(outputLines[outputLines.length - 1])
+                .matches("Empty set \\(\\d+\\.\\d{2} seconds\\)");
+
         // Job is finished. Don't need to close the job manually.
         assertThat(testChangelogResult.closed).isFalse();
     }

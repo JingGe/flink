@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /** Print result in tableau mode. */
 public class CliTableauResultView implements AutoCloseable {
 
-    public static final long DEFAULT_QUERY_BEGIN_TIME = -1;
+    public static final long DEFAULT_QUERY_BEGIN_TIME = -1L;
 
     private final Terminal terminal;
     private final ResultDescriptor resultDescriptor;
@@ -51,10 +51,6 @@ public class CliTableauResultView implements AutoCloseable {
     private final ExecutorService displayResultExecutorService;
 
     private final long queryBeginTime;
-
-    public CliTableauResultView(final Terminal terminal, final ResultDescriptor resultDescriptor) {
-        this(terminal, resultDescriptor, DEFAULT_QUERY_BEGIN_TIME);
-    }
 
     public CliTableauResultView(
             final Terminal terminal, final ResultDescriptor resultDescriptor, long queryBeginTime) {
