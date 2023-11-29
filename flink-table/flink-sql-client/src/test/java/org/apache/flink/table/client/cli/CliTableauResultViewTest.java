@@ -58,8 +58,8 @@ import java.util.stream.Collectors;
 
 import static org.apache.flink.configuration.ExecutionOptions.RUNTIME_MODE;
 import static org.apache.flink.core.testutils.FlinkAssertions.anyCauseMatches;
-import static org.apache.flink.table.api.config.TableConfigOptions.DISPLAY_QUERY_TIME_COST;
 import static org.apache.flink.table.client.config.SqlClientOptions.DISPLAY_MAX_COLUMN_WIDTH;
+import static org.apache.flink.table.client.config.SqlClientOptions.DISPLAY_QUERY_TIME_COST;
 import static org.apache.flink.table.client.config.SqlClientOptions.EXECUTION_RESULT_MODE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -190,12 +190,10 @@ class CliTableauResultViewTest {
                 new ResultDescriptor(CliClientTestUtils.createTestClient(schema), testConfig);
         CliTableauResultView view =
                 new CliTableauResultView(
-                        terminal, resultDescriptor, createNewTestChangelogResult()) {
-                    @Override
-                    long getQueryBeginTime() {
-                        return -1;
-                    }
-                };
+                        terminal,
+                        resultDescriptor,
+                        createNewTestChangelogResult(),
+                        CliTableauResultView.DEFAULT_QUERY_BEGIN_TIME);
         view.displayResults();
         assertThat(terminalOutput)
                 .hasToString(
@@ -226,9 +224,59 @@ class CliTableauResultViewTest {
                                 + "8 rows in set"
                                 + System.lineSeparator());
 
+        view.close();
+
         // test displaying query time cost
+        terminalOutput = new ByteArrayOutputStream();
+        terminal = TerminalUtils.createDumbTerminal(terminalOutput);
+        testConfig.set(DISPLAY_QUERY_TIME_COST, false);
+        view =
+                new CliTableauResultView(
+                        terminal,
+                        resultDescriptor,
+                        createNewTestChangelogResult(),
+                        System.currentTimeMillis());
+        view.displayResults();
+        assertThat(terminalOutput)
+                .hasToString(
+                        "+---------+-------------+----------------------+--------------------------------+----------------+----------------------------+---------------------+"
+                                + System.lineSeparator()
+                                + "| boolean |         int |               bigint |                        varchar | decimal(10, 5) |                  timestamp |              binary |"
+                                + System.lineSeparator()
+                                + "+---------+-------------+----------------------+--------------------------------+----------------+----------------------------+---------------------+"
+                                + System.lineSeparator()
+                                + "|  <NULL> |           1 |                    2 |                            abc |        1.23000 | 2020-03-01 18:39:14.000000 | x'32333485365d737e' |"
+                                + System.lineSeparator()
+                                + "|   FALSE |      <NULL> |                    0 |                                |        1.00000 | 2020-03-01 18:39:14.100000 |       x'649e207983' |"
+                                + System.lineSeparator()
+                                + "|    TRUE |  2147483647 |               <NULL> |                        abcdefg |    12345.00000 | 2020-03-01 18:39:14.120000 |         x'92e90102' |"
+                                + System.lineSeparator()
+                                + "|   FALSE | -2147483648 |  9223372036854775807 |                         <NULL> |    12345.06789 | 2020-03-01 18:39:14.123000 | x'32333485365d737e' |"
+                                + System.lineSeparator()
+                                + "|    TRUE |         100 | -9223372036854775808 |                     abcdefg111 |         <NULL> | 2020-03-01 18:39:14.123456 |         x'6e17fffe' |"
+                                + System.lineSeparator()
+                                + "|  <NULL> |          -1 |                   -1 | abcdefghijklmnopqrstuvwxyz1... |   -12345.06789 |                     <NULL> |              <NULL> |"
+                                + System.lineSeparator()
+                                + "|  <NULL> |          -1 |                   -1 |                   这是一段中文 |   -12345.06789 | 2020-03-04 18:39:14.000000 |   x'fdfeff00010203' |"
+                                + System.lineSeparator()
+                                + "|  <NULL> |          -1 |                   -1 |  これは日本語をテストするた... |   -12345.06789 | 2020-03-04 18:39:14.000000 |   x'fdfeff00010203' |"
+                                + System.lineSeparator()
+                                + "+---------+-------------+----------------------+--------------------------------+----------------+----------------------------+---------------------+"
+                                + System.lineSeparator()
+                                + "8 rows in set"
+                                + System.lineSeparator());
+
+        view.close();
+
+        terminalOutput = new ByteArrayOutputStream();
+        terminal = TerminalUtils.createDumbTerminal(terminalOutput);
         testConfig.set(DISPLAY_QUERY_TIME_COST, true);
-        view = new CliTableauResultView(terminal, resultDescriptor, createNewTestChangelogResult());
+        view =
+                new CliTableauResultView(
+                        terminal,
+                        resultDescriptor,
+                        createNewTestChangelogResult(),
+                        System.currentTimeMillis());
         view.displayResults();
         assertThat(terminalOutput.toString())
                 .contains(
@@ -261,7 +309,6 @@ class CliTableauResultViewTest {
         String[] outputLines = terminalOutput.toString().split("\\r?\\n");
         assertThat(outputLines[outputLines.length - 1])
                 .matches("8 rows in set \\(\\d+\\.\\d{2} seconds\\)");
-        testConfig.set(DISPLAY_QUERY_TIME_COST, false);
 
         view.close();
 

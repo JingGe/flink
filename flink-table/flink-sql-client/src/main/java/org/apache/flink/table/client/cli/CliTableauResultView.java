@@ -42,14 +42,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 /** Print result in tableau mode. */
 public class CliTableauResultView implements AutoCloseable {
 
+    public static final long DEFAULT_QUERY_BEGIN_TIME = -1;
+
     private final Terminal terminal;
     private final ResultDescriptor resultDescriptor;
 
     private final ChangelogResult collectResult;
     private final ExecutorService displayResultExecutorService;
 
+    private final long queryBeginTime;
+
     public CliTableauResultView(final Terminal terminal, final ResultDescriptor resultDescriptor) {
-        this(terminal, resultDescriptor, resultDescriptor.createResult());
+        this(terminal, resultDescriptor, DEFAULT_QUERY_BEGIN_TIME);
+    }
+
+    public CliTableauResultView(
+            final Terminal terminal, final ResultDescriptor resultDescriptor, long queryBeginTime) {
+        this(terminal, resultDescriptor, resultDescriptor.createResult(), queryBeginTime);
     }
 
     @VisibleForTesting
@@ -57,12 +66,21 @@ public class CliTableauResultView implements AutoCloseable {
             final Terminal terminal,
             final ResultDescriptor resultDescriptor,
             final ChangelogResult collectResult) {
+        this(terminal, resultDescriptor, collectResult, DEFAULT_QUERY_BEGIN_TIME);
+    }
+
+    public CliTableauResultView(
+            final Terminal terminal,
+            final ResultDescriptor resultDescriptor,
+            final ChangelogResult collectResult,
+            long queryBeginTime) {
         this.terminal = terminal;
         this.resultDescriptor = resultDescriptor;
         this.collectResult = collectResult;
         this.displayResultExecutorService =
                 Executors.newSingleThreadExecutor(
                         new ExecutorThreadFactory("CliTableauResultView"));
+        this.queryBeginTime = queryBeginTime;
     }
 
     public void displayResults() throws SqlExecutionException {
@@ -130,11 +148,7 @@ public class CliTableauResultView implements AutoCloseable {
                         false,
                         false,
                         resultDescriptor.isPrintQueryTimeCost());
-        style.print(resultRows.iterator(), terminal.writer(), getQueryBeginTime());
-    }
-
-    long getQueryBeginTime() {
-        return System.currentTimeMillis();
+        style.print(resultRows.iterator(), terminal.writer(), queryBeginTime);
     }
 
     private void printStreamingResults(AtomicInteger receivedRowCount) {

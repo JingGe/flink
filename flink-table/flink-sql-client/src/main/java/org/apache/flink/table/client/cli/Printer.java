@@ -35,6 +35,7 @@ import static org.apache.flink.table.client.cli.CliStrings.MESSAGE_EXECUTE_STATE
 import static org.apache.flink.table.client.cli.CliStrings.MESSAGE_FINISH_STATEMENT;
 import static org.apache.flink.table.client.cli.CliStrings.MESSAGE_STATEMENT_SUBMITTED;
 import static org.apache.flink.table.client.cli.CliStrings.MESSAGE_SUBMITTING_STATEMENT;
+import static org.apache.flink.table.client.config.SqlClientOptions.DISPLAY_QUERY_TIME_COST;
 
 /** Printer to print the results to the terminal. */
 public interface Printer extends Closeable {
@@ -64,8 +65,8 @@ public interface Printer extends Closeable {
     }
 
     static StatementResultPrinter createStatementCommandPrinter(
-            StatementResult result, ReadableConfig sessionConfig) {
-        return new StatementResultPrinter(result, sessionConfig);
+            StatementResult result, ReadableConfig sessionConfig, long startTime) {
+        return new StatementResultPrinter(result, sessionConfig, startTime);
     }
 
     static InitializationCommandPrinter createInitializationCommandPrinter() {
@@ -167,9 +168,13 @@ public interface Printer extends Closeable {
         private final StatementResult result;
         private final ReadableConfig sessionConfig;
 
-        public StatementResultPrinter(StatementResult result, ReadableConfig sessionConfig) {
+        private final long queryBeginTime;
+
+        public StatementResultPrinter(
+                StatementResult result, ReadableConfig sessionConfig, long queryBeginTime) {
             this.result = result;
             this.sessionConfig = sessionConfig;
+            this.queryBeginTime = queryBeginTime;
         }
 
         @Override
@@ -192,7 +197,7 @@ public interface Printer extends Closeable {
             final ResultDescriptor resultDesc = new ResultDescriptor(result, sessionConfig);
             if (resultDesc.isTableauMode()) {
                 try (CliTableauResultView tableauResultView =
-                        new CliTableauResultView(terminal, resultDesc)) {
+                        new CliTableauResultView(terminal, resultDesc, queryBeginTime)) {
                     tableauResultView.displayResults();
                 }
             } else {
@@ -235,7 +240,8 @@ public interface Printer extends Closeable {
                                 result.getRowDataToStringConverter(),
                                 Integer.MAX_VALUE,
                                 true,
-                                false)
+                                false,
+                                sessionConfig.get(DISPLAY_QUERY_TIME_COST))
                         .print(result, terminal.writer());
             }
         }
